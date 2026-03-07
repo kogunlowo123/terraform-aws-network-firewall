@@ -41,6 +41,55 @@ Production-ready Terraform module for deploying AWS Network Firewall with statef
 
 All inter-VPC and egress traffic flows through the centralized inspection VPC where AWS Network Firewall performs deep packet inspection using stateless L3/L4 rules, Suricata-compatible IDS/IPS signatures, and domain-based filtering.
 
+### Component Diagram
+
+```mermaid
+flowchart TB
+    subgraph VPC["Inspection VPC"]
+        FW["AWS Network Firewall"]
+        FWP["Firewall Policy"]
+        FW --> FWP
+    end
+
+    subgraph RuleGroups["Rule Groups"]
+        SLR["Stateless Rules\n(L3/L4 Filtering)"]
+        SFR["Stateful Rules\n(5-Tuple)"]
+        SUR["Suricata IDS/IPS\nRules"]
+        DOM["Domain Filtering\n(HTTP/TLS SNI)"]
+    end
+
+    subgraph Logging["Logging Destinations"]
+        S3["S3 Bucket\n(Encrypted)"]
+        CW["CloudWatch Logs"]
+    end
+
+    subgraph Security["Encryption"]
+        KMS["KMS Key\n(AWS-owned / CMK)"]
+    end
+
+    FWP --> SLR
+    FWP --> SFR
+    FWP --> SUR
+    FWP --> DOM
+    FW --> S3
+    FW --> CW
+    FW --> KMS
+
+    style VPC fill:#FF9900,stroke:#FF9900,color:#fff
+    style RuleGroups fill:#DD344C,stroke:#DD344C,color:#fff
+    style Logging fill:#3F8624,stroke:#3F8624,color:#fff
+    style Security fill:#8C4FFF,stroke:#8C4FFF,color:#fff
+    style FW fill:#FF9900,stroke:#cc7a00,color:#fff
+    style FWP fill:#FF9900,stroke:#cc7a00,color:#fff
+    style SLR fill:#DD344C,stroke:#b02a3d,color:#fff
+    style SFR fill:#DD344C,stroke:#b02a3d,color:#fff
+    style SUR fill:#DD344C,stroke:#b02a3d,color:#fff
+    style DOM fill:#DD344C,stroke:#b02a3d,color:#fff
+    style S3 fill:#3F8624,stroke:#2d6119,color:#fff
+    style CW fill:#3F8624,stroke:#2d6119,color:#fff
+    style KMS fill:#8C4FFF,stroke:#6b3dcc,color:#fff
+```
+
 ## Features
 
 - **Multi-AZ Deployment** - Firewall endpoints across multiple Availability Zones for high availability

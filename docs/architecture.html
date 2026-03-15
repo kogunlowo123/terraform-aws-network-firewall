@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>terraform-aws-network-firewall | Architecture</title>
+<style>
+:root{--ink:#0b0c0b;--accent:#c8420a;--surface:#141514;--border:#2a2b2a;--text:#d4d4d4;--muted:#8a8a8a;--card:#1a1b1a;--green:#2ea043;--blue:#4493f8;--yellow:#d29922;--red:#f85149}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--ink);color:var(--text);font-family:'SF Mono','Cascadia Code','Fira Code',monospace;font-size:14px;line-height:1.7}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.container{max-width:1200px;margin:0 auto;padding:2rem}
+header{border-bottom:2px solid var(--accent);padding-bottom:1.5rem;margin-bottom:2.5rem}
+header h1{font-size:1.8rem;color:#fff;letter-spacing:-0.5px}
+header .subtitle{color:var(--muted);margin-top:0.3rem;font-size:0.95rem}
+h2{font-size:1.3rem;color:var(--accent);margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)}
+h3{font-size:1rem;color:#fff;margin:1.5rem 0 0.5rem}
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:0.75rem;font-weight:600;margin-right:0.4rem}
+.badge-green{background:rgba(46,160,67,0.15);color:var(--green);border:1px solid rgba(46,160,67,0.3)}
+.badge-blue{background:rgba(68,147,248,0.15);color:var(--blue);border:1px solid rgba(68,147,248,0.3)}
+.badge-yellow{background:rgba(210,153,34,0.15);color:var(--yellow);border:1px solid rgba(210,153,34,0.3)}
+.badge-red{background:rgba(248,81,73,0.15);color:var(--red);border:1px solid rgba(248,81,73,0.3)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:1rem 0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.2rem}
+.card .label{font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.card .value{font-size:1.4rem;color:#fff;margin-top:0.3rem;font-weight:700}
+.card .detail{font-size:0.8rem;color:var(--muted);margin-top:0.2rem}
+.arch-diagram{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2rem;margin:1rem 0;overflow-x:auto}
+.flow-row{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:center;margin:0.5rem 0}
+.flow-box{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:0.6rem 1rem;text-align:center;font-size:0.8rem;min-width:120px}
+.flow-box.primary{border-color:var(--accent);color:var(--accent)}
+.flow-box.green{border-color:var(--green);color:var(--green)}
+.flow-box.blue{border-color:var(--blue);color:var(--blue)}
+.flow-box.yellow{border-color:var(--yellow);color:var(--yellow)}
+.flow-box.red{border-color:var(--red);color:var(--red)}
+.flow-arrow{color:var(--muted);font-size:1.2rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85rem}
+th,td{text-align:left;padding:0.5rem 0.8rem;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600;text-transform:uppercase;font-size:0.7rem;letter-spacing:1px}
+td code{background:var(--surface);padding:1px 5px;border-radius:3px;font-size:0.8rem}
+.checklist{list-style:none;padding:0}
+.checklist li{padding:0.3rem 0;padding-left:1.5rem;position:relative}
+.checklist li::before{content:"[ ]";position:absolute;left:0;color:var(--muted);font-size:0.8rem}
+.section-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem}
+.info-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.2rem;margin:0.5rem 0}
+.info-block h4{color:var(--accent);margin-bottom:0.5rem;font-size:0.9rem}
+.info-block ul{padding-left:1.2rem;color:var(--muted);font-size:0.85rem}
+.info-block li{margin:0.2rem 0}
+footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:0.75rem;text-align:center}
+.exec-summary{background:var(--surface);border-left:3px solid var(--accent);padding:1.2rem 1.5rem;margin:1rem 0;border-radius:0 6px 6px 0;font-size:0.9rem;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>terraform-aws-network-firewall</h1>
+<div class="subtitle">AWS Network Firewall with stateful/stateless rules, Suricata IDS/IPS, domain filtering, and centralized inspection VPC pattern</div>
+<div style="margin-top:0.8rem">
+<span class="badge badge-green">Terraform &ge; 1.5.0</span>
+<span class="badge badge-blue">AWS Provider &ge; 5.20.0</span>
+<span class="badge badge-yellow">Suricata IDS/IPS</span>
+<span class="badge badge-red">Strict Rule Order</span>
+</div>
+</header>
+
+<h2>Executive Summary</h2>
+<div class="exec-summary">
+This module deploys AWS Network Firewall with a comprehensive firewall policy supporting stateless L3/L4 packet filtering, Suricata-compatible IDS/IPS rule groups for deep packet inspection, domain-based filtering (HTTP Host header and TLS SNI inspection), and 5-tuple stateful rules. It implements the centralized inspection VPC pattern where all inter-VPC and egress traffic is routed through firewall endpoints deployed across multiple Availability Zones. Logging supports both CloudWatch Logs and S3 destinations with ALERT and FLOW log types. S3 log buckets are automatically provisioned with versioning, KMS encryption, lifecycle policies (Standard IA at 30 days, Glacier at 90 days, expiry at 365 days), and public access blocking. The stateful engine uses STRICT_ORDER for predictable rule evaluation.
+</div>
+
+<h2>Overview</h2>
+<div class="cards">
+<div class="card"><div class="label">Resources Created</div><div class="value">12+</div><div class="detail">Firewall, Policy, Rule Groups, CW Logs, S3 Bucket, Logging Config</div></div>
+<div class="card"><div class="label">Input Variables</div><div class="value">14</div><div class="detail">name, vpc_id, subnet_ids, rule groups, logging, encryption, etc.</div></div>
+<div class="card"><div class="label">Outputs</div><div class="value">6</div><div class="detail">firewall_id, firewall_arn, endpoint_ids, policy_arn, logging_config_id</div></div>
+<div class="card"><div class="label">Cost Estimate</div><div class="value">~$641/mo</div><div class="detail">2-AZ deployment, 1 TB processed (us-east-1)</div></div>
+</div>
+
+<h2>Architecture Diagram</h2>
+<div class="arch-diagram">
+<div class="flow-row">
+<div class="flow-box yellow">Internet</div>
+</div>
+<div class="flow-row"><span class="flow-arrow">&darr;</span></div>
+<div class="flow-row">
+<div class="flow-box yellow">Internet Gateway</div>
+</div>
+<div class="flow-row"><span class="flow-arrow">&darr;</span></div>
+<div class="flow-row">
+<div class="flow-box yellow">Public Subnets<br><small>NAT Gateways</small></div>
+</div>
+<div class="flow-row"><span class="flow-arrow">&darr;</span></div>
+<div class="flow-row">
+<div class="flow-box primary">Firewall Subnets<br><small>Network FW Endpoints (Multi-AZ)</small></div>
+</div>
+<div class="flow-row"><span class="flow-arrow">&darr;</span></div>
+<div class="flow-row">
+<div class="flow-box primary">Firewall Policy<br><small>Strict Rule Order</small></div>
+</div>
+<div class="flow-row"><span class="flow-arrow">&darr;</span></div>
+<div class="flow-row">
+<div class="flow-box red">Stateless Rules<br><small>L3/L4 Filtering</small></div>
+<div class="flow-box red">Suricata IDS/IPS<br><small>Deep Inspection</small></div>
+<div class="flow-box red">Domain Filtering<br><small>HTTP/TLS SNI</small></div>
+<div class="flow-box red">5-Tuple Rules<br><small>Stateful</small></div>
+</div>
+<div class="flow-row"><span class="flow-arrow">&darr;</span></div>
+<div class="flow-row">
+<div class="flow-box yellow">TGW Attachment Subnets</div>
+</div>
+<div class="flow-row"><span class="flow-arrow">&darr;</span></div>
+<div class="flow-row">
+<div class="flow-box blue">Transit Gateway</div>
+</div>
+<div class="flow-row"><span class="flow-arrow">&darr;</span></div>
+<div class="flow-row">
+<div class="flow-box green">Spoke VPC A</div>
+<div class="flow-box green">Spoke VPC B</div>
+<div class="flow-box green">Spoke VPC C</div>
+</div>
+<div style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1rem">
+<div class="flow-row">
+<div class="flow-box blue">CloudWatch Logs<br><small>ALERT + FLOW</small></div>
+<div class="flow-box green">S3 Bucket<br><small>Encrypted, Lifecycle</small></div>
+<div class="flow-box blue">KMS Key<br><small>CMK / AWS-owned</small></div>
+</div>
+</div>
+</div>
+
+<h2>Component Breakdown</h2>
+<div class="section-grid">
+<div class="info-block">
+<h4>Network Firewall</h4>
+<ul>
+<li>Multi-AZ firewall endpoints via subnet_mapping</li>
+<li>Deletion protection (firewall, policy, subnet changes)</li>
+<li>Customer-managed KMS or AWS-owned encryption</li>
+<li>Firewall policy with strict rule ordering</li>
+</ul>
+</div>
+<div class="info-block">
+<h4>Stateless Rule Groups</h4>
+<ul>
+<li>L3/L4 packet filtering (protocols, CIDRs, ports)</li>
+<li>TCP flag matching</li>
+<li>Priority-based rule evaluation</li>
+<li>Actions: aws:pass, aws:drop, aws:forward_to_sfe</li>
+<li>Default action for unmatched + fragmented packets</li>
+</ul>
+</div>
+<div class="info-block">
+<h4>Stateful Rule Groups</h4>
+<ul>
+<li>Suricata IDS/IPS: full Suricata-compatible rule engine</li>
+<li>Rule variables (HOME_NET, EXTERNAL_NET)</li>
+<li>Domain filtering: DENYLIST on HTTP_HOST and TLS_SNI</li>
+<li>5-tuple rules for traditional stateful inspection</li>
+<li>Strict order engine for predictable evaluation</li>
+</ul>
+</div>
+<div class="info-block">
+<h4>Logging &amp; Storage</h4>
+<ul>
+<li>ALERT and FLOW log types</li>
+<li>CloudWatch Logs or S3 destinations</li>
+<li>S3: versioning, SSE (KMS/AES256), lifecycle policies</li>
+<li>Standard IA at 30d, Glacier at 90d, expire at 365d</li>
+<li>Public access blocking on all S3 log buckets</li>
+</ul>
+</div>
+</div>
+
+<h2>Data Flow</h2>
+<div class="info-block">
+<ol style="padding-left:1.2rem;color:var(--muted);font-size:0.85rem">
+<li>Traffic enters through Internet Gateway to public subnets (NAT Gateways)</li>
+<li>Route tables direct traffic to Network Firewall endpoints in firewall subnets</li>
+<li>Stateless rules process packets first (L3/L4, drop ICMP, forward to stateful engine)</li>
+<li>Stateful engine evaluates in strict order: Suricata IDS/IPS, domain filtering, 5-tuple</li>
+<li>Suricata rules inspect payload for threat signatures (SSH brute force, C2 channels)</li>
+<li>Domain filtering blocks blacklisted domains via HTTP Host and TLS SNI headers</li>
+<li>Passed traffic routes through TGW attachment subnets to Transit Gateway</li>
+<li>Transit Gateway distributes traffic to spoke VPCs</li>
+<li>ALERT logs capture dropped/matched threats; FLOW logs capture all traffic metadata</li>
+</ol>
+</div>
+
+<h2>Security Controls</h2>
+<table>
+<tr><th>Control</th><th>Implementation</th><th>Default</th></tr>
+<tr><td>Deep Packet Inspection</td><td>Suricata IDS/IPS rule engine</td><td>Configurable rules_string</td></tr>
+<tr><td>Domain Blocking</td><td>HTTP Host + TLS SNI denylist</td><td>Configurable domain_list</td></tr>
+<tr><td>L3/L4 Filtering</td><td>Stateless rules (protocol, port, CIDR, TCP flags)</td><td>Forward to stateful engine</td></tr>
+<tr><td>Rule Ordering</td><td>STRICT_ORDER for stateful engine</td><td>Always strict</td></tr>
+<tr><td>Encryption</td><td>KMS (customer-managed or AWS-owned)</td><td><code>AWS_OWNED_KMS_KEY</code></td></tr>
+<tr><td>Deletion Protection</td><td>Firewall + policy + subnet change protection</td><td><code>false</code></td></tr>
+<tr><td>Log Integrity</td><td>S3 versioning + encryption + public access block</td><td>Enabled when S3 logging</td></tr>
+<tr><td>Log Lifecycle</td><td>IA at 30d, Glacier at 90d, expire at 365d</td><td>Auto-configured</td></tr>
+</table>
+
+<h2>Industry Adaptation</h2>
+<div class="section-grid">
+<div class="info-block">
+<h4>Enterprise / Hub-Spoke</h4>
+<ul>
+<li>Centralized inspection VPC with Transit Gateway</li>
+<li>All inter-VPC traffic inspected</li>
+<li>Suricata rules for threat detection</li>
+<li>ALERT + FLOW logs to S3 for SIEM integration</li>
+</ul>
+</div>
+<div class="info-block">
+<h4>Financial Services / PCI</h4>
+<ul>
+<li>Customer-managed KMS encryption</li>
+<li>Domain filtering for data exfiltration prevention</li>
+<li>S3 logs with Glacier archival for compliance</li>
+<li>Deletion protection enabled</li>
+</ul>
+</div>
+<div class="info-block">
+<h4>Government / FedRAMP</h4>
+<ul>
+<li>IDS/IPS with custom Suricata signatures</li>
+<li>Strict rule ordering for predictable security</li>
+<li>Multi-AZ for high availability requirement</li>
+<li>CloudWatch + S3 dual logging</li>
+</ul>
+</div>
+</div>
+
+<h2>Production Readiness Checklist</h2>
+<ul class="checklist">
+<li>Deploy firewall endpoints in at least 2 AZs</li>
+<li>Enable <code>deletion_protection = true</code></li>
+<li>Use <code>CUSTOMER_KMS</code> encryption with a dedicated KMS key</li>
+<li>Enable both ALERT and FLOW log types</li>
+<li>Test Suricata rules in alert-only mode before switching to drop</li>
+<li>Configure domain denylist for known malicious domains</li>
+<li>Set stateless default action to <code>aws:forward_to_sfe</code></li>
+<li>Enable appliance mode on Transit Gateway attachments</li>
+<li>Review S3 lifecycle policy for log retention compliance</li>
+<li>Configure route tables to direct all traffic through firewall endpoints</li>
+<li>Tag all resources with Environment, Security-Zone, ManagedBy</li>
+</ul>
+
+<h2>Configuration Reference</h2>
+<h3>Key Inputs</h3>
+<table>
+<tr><th>Variable</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td><code>name</code></td><td>string</td><td>--</td><td>Firewall name prefix (required)</td></tr>
+<tr><td><code>vpc_id</code></td><td>string</td><td>--</td><td>Inspection VPC ID (required)</td></tr>
+<tr><td><code>subnet_ids</code></td><td>map(string)</td><td>--</td><td>AZ-to-subnet map for endpoints (required)</td></tr>
+<tr><td><code>stateless_rule_groups</code></td><td>list(object)</td><td><code>[]</code></td><td>L3/L4 stateless rules</td></tr>
+<tr><td><code>stateful_rule_groups</code></td><td>list(object)</td><td><code>[]</code></td><td>Suricata / Domain / 5-tuple rules</td></tr>
+<tr><td><code>stateless_default_actions</code></td><td>list(string)</td><td><code>["aws:forward_to_sfe"]</code></td><td>Default for unmatched packets</td></tr>
+<tr><td><code>enable_logging</code></td><td>bool</td><td><code>true</code></td><td>Enable firewall logging</td></tr>
+<tr><td><code>log_destination_type</code></td><td>string</td><td><code>cloudwatch</code></td><td>s3 or cloudwatch</td></tr>
+<tr><td><code>log_types</code></td><td>list(string)</td><td><code>["ALERT","FLOW"]</code></td><td>Log categories</td></tr>
+<tr><td><code>encryption_type</code></td><td>string</td><td><code>AWS_OWNED_KMS_KEY</code></td><td>KMS encryption mode</td></tr>
+<tr><td><code>deletion_protection</code></td><td>bool</td><td><code>false</code></td><td>Prevent accidental deletion</td></tr>
+</table>
+
+<h3>Key Outputs</h3>
+<table>
+<tr><th>Output</th><th>Description</th></tr>
+<tr><td><code>firewall_id</code></td><td>Unique firewall identifier</td></tr>
+<tr><td><code>firewall_arn</code></td><td>Firewall ARN</td></tr>
+<tr><td><code>endpoint_ids</code></td><td>Map of AZ to VPC endpoint ID</td></tr>
+<tr><td><code>policy_arn</code></td><td>Firewall policy ARN</td></tr>
+<tr><td><code>firewall_status</code></td><td>Current firewall status</td></tr>
+<tr><td><code>logging_configuration_id</code></td><td>Logging config ID</td></tr>
+</table>
+
+<h2>Deployment</h2>
+<div class="info-block">
+<pre style="color:var(--text);font-size:0.85rem">
+# Initialize
+terraform init
+
+# Plan
+terraform plan -var-file="firewall.tfvars"
+
+# Apply
+terraform apply -var-file="firewall.tfvars"
+
+# Verify firewall status
+aws network-firewall describe-firewall \
+  --firewall-name &lt;name&gt; \
+  --query 'FirewallStatus.Status'
+
+# Update route tables to point to firewall endpoints
+# (endpoint IDs available from module output)
+</pre>
+</div>
+
+<h2>Links &amp; References</h2>
+<div class="section-grid">
+<div class="info-block">
+<h4>AWS Documentation</h4>
+<ul>
+<li><a href="https://docs.aws.amazon.com/network-firewall/latest/developerguide/">Network Firewall Guide</a></li>
+<li><a href="https://aws.amazon.com/network-firewall/pricing/">Network Firewall Pricing</a></li>
+<li><a href="https://suricata.readthedocs.io/en/latest/rules/">Suricata Rules Format</a></li>
+<li><a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/inline-traffic-inspection-third-party-appliances/">Centralized Inspection Architecture</a></li>
+</ul>
+</div>
+<div class="info-block">
+<h4>Module Resources</h4>
+<ul>
+<li><a href="../examples/basic/">Example: Basic (Stateless)</a></li>
+<li><a href="../examples/advanced/">Example: Advanced (Suricata + Domains)</a></li>
+<li><a href="../examples/complete/">Example: Complete (Centralized VPC)</a></li>
+</ul>
+</div>
+</div>
+
+<footer>
+terraform-aws-network-firewall | Architecture Documentation | Generated 2026-03-15 | MIT License
+</footer>
+</div>
+</body>
+</html>

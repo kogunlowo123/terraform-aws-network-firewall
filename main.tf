@@ -25,7 +25,7 @@ resource "aws_networkfirewall_firewall" "this" {
     }
   }
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.tags, {
     Name = var.name
   })
 }
@@ -35,7 +35,7 @@ resource "aws_networkfirewall_firewall" "this" {
 ################################################################################
 
 resource "aws_networkfirewall_firewall_policy" "this" {
-  name = local.firewall_policy_name
+  name = var.firewall_policy_name != "" ? var.firewall_policy_name : "${var.name}-policy"
 
   firewall_policy {
     stateless_default_actions          = var.stateless_default_actions
@@ -83,8 +83,8 @@ resource "aws_networkfirewall_firewall_policy" "this" {
     }
   }
 
-  tags = merge(local.common_tags, {
-    Name = local.firewall_policy_name
+  tags = merge(var.tags, {
+    Name = var.firewall_policy_name != "" ? var.firewall_policy_name : "${var.name}-policy"
   })
 }
 
@@ -166,7 +166,7 @@ resource "aws_networkfirewall_rule_group" "stateless" {
     }
   }
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.tags, {
     Name = var.stateless_rule_groups[count.index].name
   })
 }
@@ -176,22 +176,22 @@ resource "aws_networkfirewall_rule_group" "stateless" {
 ################################################################################
 
 resource "aws_networkfirewall_rule_group" "suricata" {
-  count = length(local.suricata_rule_groups)
+  count = length([for rg in var.stateful_rule_groups : rg if rg.type == "SURICATA"])
 
-  name     = local.suricata_rule_groups[count.index].name
-  capacity = local.suricata_rule_groups[count.index].capacity
+  name     = [for rg in var.stateful_rule_groups : rg if rg.type == "SURICATA"][count.index].name
+  capacity = [for rg in var.stateful_rule_groups : rg if rg.type == "SURICATA"][count.index].capacity
   type     = "STATEFUL"
 
   rule_group {
     rules_source {
-      rules_string = local.suricata_rule_groups[count.index].rules_string
+      rules_string = [for rg in var.stateful_rule_groups : rg if rg.type == "SURICATA"][count.index].rules_string
     }
 
     dynamic "rule_variables" {
-      for_each = length(local.suricata_rule_groups[count.index].rule_variables) > 0 ? [1] : []
+      for_each = length([for rg in var.stateful_rule_groups : rg if rg.type == "SURICATA"][count.index].rule_variables) > 0 ? [1] : []
       content {
         dynamic "ip_sets" {
-          for_each = local.suricata_rule_groups[count.index].rule_variables
+          for_each = [for rg in var.stateful_rule_groups : rg if rg.type == "SURICATA"][count.index].rule_variables
           content {
             key = ip_sets.key
             ip_set {
@@ -203,7 +203,7 @@ resource "aws_networkfirewall_rule_group" "suricata" {
     }
 
     stateful_rule_options {
-      capacity = local.suricata_rule_groups[count.index].capacity
+      capacity = [for rg in var.stateful_rule_groups : rg if rg.type == "SURICATA"][count.index].capacity
     }
   }
 
@@ -215,8 +215,8 @@ resource "aws_networkfirewall_rule_group" "suricata" {
     }
   }
 
-  tags = merge(local.common_tags, {
-    Name = local.suricata_rule_groups[count.index].name
+  tags = merge(var.tags, {
+    Name = [for rg in var.stateful_rule_groups : rg if rg.type == "SURICATA"][count.index].name
   })
 }
 
@@ -225,10 +225,10 @@ resource "aws_networkfirewall_rule_group" "suricata" {
 ################################################################################
 
 resource "aws_networkfirewall_rule_group" "domain" {
-  count = length(local.domain_list_rule_groups)
+  count = length([for rg in var.stateful_rule_groups : rg if rg.type == "DOMAIN_LIST"])
 
-  name     = local.domain_list_rule_groups[count.index].name
-  capacity = local.domain_list_rule_groups[count.index].capacity
+  name     = [for rg in var.stateful_rule_groups : rg if rg.type == "DOMAIN_LIST"][count.index].name
+  capacity = [for rg in var.stateful_rule_groups : rg if rg.type == "DOMAIN_LIST"][count.index].capacity
   type     = "STATEFUL"
 
   rule_group {
@@ -236,7 +236,7 @@ resource "aws_networkfirewall_rule_group" "domain" {
       rules_source_list {
         generated_rules_type = "DENYLIST"
         target_types         = ["HTTP_HOST", "TLS_SNI"]
-        targets              = local.domain_list_rule_groups[count.index].domain_list
+        targets              = [for rg in var.stateful_rule_groups : rg if rg.type == "DOMAIN_LIST"][count.index].domain_list
       }
     }
   }
@@ -249,25 +249,25 @@ resource "aws_networkfirewall_rule_group" "domain" {
     }
   }
 
-  tags = merge(local.common_tags, {
-    Name = local.domain_list_rule_groups[count.index].name
+  tags = merge(var.tags, {
+    Name = [for rg in var.stateful_rule_groups : rg if rg.type == "DOMAIN_LIST"][count.index].name
   })
 }
 
 ################################################################################
-# Stateful Rule Groups - 5-Tuple (placeholder for future use)
+# Stateful Rule Groups - 5-Tuple
 ################################################################################
 
 resource "aws_networkfirewall_rule_group" "five_tuple" {
-  count = length(local.five_tuple_rule_groups)
+  count = length([for rg in var.stateful_rule_groups : rg if rg.type == "5TUPLE"])
 
-  name     = local.five_tuple_rule_groups[count.index].name
-  capacity = local.five_tuple_rule_groups[count.index].capacity
+  name     = [for rg in var.stateful_rule_groups : rg if rg.type == "5TUPLE"][count.index].name
+  capacity = [for rg in var.stateful_rule_groups : rg if rg.type == "5TUPLE"][count.index].capacity
   type     = "STATEFUL"
 
   rule_group {
     rules_source {
-      rules_string = local.five_tuple_rule_groups[count.index].rules_string
+      rules_string = [for rg in var.stateful_rule_groups : rg if rg.type == "5TUPLE"][count.index].rules_string
     }
   }
 
@@ -279,8 +279,8 @@ resource "aws_networkfirewall_rule_group" "five_tuple" {
     }
   }
 
-  tags = merge(local.common_tags, {
-    Name = local.five_tuple_rule_groups[count.index].name
+  tags = merge(var.tags, {
+    Name = [for rg in var.stateful_rule_groups : rg if rg.type == "5TUPLE"][count.index].name
   })
 }
 
@@ -289,12 +289,14 @@ resource "aws_networkfirewall_rule_group" "five_tuple" {
 ################################################################################
 
 resource "aws_cloudwatch_log_group" "firewall" {
-  for_each = local.cloudwatch_log_groups
+  for_each = var.enable_logging && var.log_destination_type == "cloudwatch" ? {
+    for lt in var.log_types : lt => "/aws/network-firewall/${var.name}/${lower(lt)}"
+  } : {}
 
   name              = each.value
   retention_in_days = 90
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.tags, {
     Name    = each.value
     LogType = each.key
   })
@@ -307,11 +309,11 @@ resource "aws_cloudwatch_log_group" "firewall" {
 resource "aws_s3_bucket" "firewall_logs" {
   count = var.enable_logging && var.log_destination_type == "s3" ? 1 : 0
 
-  bucket        = local.s3_bucket_name
+  bucket        = "${var.name}-firewall-logs-${data.aws_caller_identity.current.account_id}"
   force_destroy = false
 
-  tags = merge(local.common_tags, {
-    Name = local.s3_bucket_name
+  tags = merge(var.tags, {
+    Name = "${var.name}-firewall-logs-${data.aws_caller_identity.current.account_id}"
   })
 }
 
@@ -386,7 +388,12 @@ resource "aws_networkfirewall_logging_configuration" "this" {
 
   logging_configuration {
     dynamic "log_destination_config" {
-      for_each = local.log_configs
+      for_each = {
+        for lt in var.log_types : lt => {
+          log_type             = lt
+          log_destination_type = var.log_destination_type == "s3" ? "S3" : "CloudWatchLogs"
+        }
+      }
       content {
         log_destination_type = log_destination_config.value.log_destination_type
         log_type             = log_destination_config.value.log_type

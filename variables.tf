@@ -1,5 +1,5 @@
 variable "name" {
-  description = "Name prefix for all Network Firewall resources"
+  description = "Name prefix for all Network Firewall resources."
   type        = string
 
   validation {
@@ -9,7 +9,7 @@ variable "name" {
 }
 
 variable "vpc_id" {
-  description = "VPC ID where the Network Firewall will be deployed"
+  description = "VPC ID where the Network Firewall will be deployed."
   type        = string
 
   validation {
@@ -19,7 +19,7 @@ variable "vpc_id" {
 }
 
 variable "subnet_ids" {
-  description = "Map of Availability Zone to subnet ID for firewall endpoint placement"
+  description = "Map of Availability Zone to subnet ID for firewall endpoint placement."
   type        = map(string)
 
   validation {
@@ -29,13 +29,13 @@ variable "subnet_ids" {
 }
 
 variable "firewall_policy_name" {
-  description = "Name for the firewall policy. Defaults to var.name if not specified"
+  description = "Name for the firewall policy; defaults to var.name-policy if empty."
   type        = string
   default     = ""
 }
 
 variable "stateless_rule_groups" {
-  description = "List of stateless rule group configurations"
+  description = "List of stateless rule group configurations."
   type = list(object({
     name     = string
     priority = number
@@ -60,7 +60,7 @@ variable "stateless_rule_groups" {
 }
 
 variable "stateful_rule_groups" {
-  description = "List of stateful rule group configurations"
+  description = "List of stateful rule group configurations (SURICATA, DOMAIN_LIST, or 5TUPLE)."
   type = list(object({
     name           = string
     capacity       = number
@@ -80,7 +80,7 @@ variable "stateful_rule_groups" {
 }
 
 variable "stateless_default_actions" {
-  description = "Default actions for stateless rules (aws:pass, aws:drop, aws:forward_to_sfe)"
+  description = "Default actions for stateless rules (aws:pass, aws:drop, aws:forward_to_sfe)."
   type        = list(string)
   default     = ["aws:forward_to_sfe"]
 
@@ -94,7 +94,7 @@ variable "stateless_default_actions" {
 }
 
 variable "stateless_fragment_default_actions" {
-  description = "Default actions for fragmented packets (aws:pass, aws:drop, aws:forward_to_sfe)"
+  description = "Default actions for fragmented packets (aws:pass, aws:drop, aws:forward_to_sfe)."
   type        = list(string)
   default     = ["aws:forward_to_sfe"]
 
@@ -108,13 +108,13 @@ variable "stateless_fragment_default_actions" {
 }
 
 variable "enable_logging" {
-  description = "Enable logging for the Network Firewall"
+  description = "Enable logging for the Network Firewall."
   type        = bool
   default     = true
 }
 
 variable "log_destination_type" {
-  description = "Destination type for firewall logs (s3 or cloudwatch)"
+  description = "Destination type for firewall logs (s3 or cloudwatch)."
   type        = string
   default     = "cloudwatch"
 
@@ -125,7 +125,7 @@ variable "log_destination_type" {
 }
 
 variable "log_types" {
-  description = "Types of logs to enable (ALERT and/or FLOW)"
+  description = "Types of logs to enable (ALERT and/or FLOW)."
   type        = list(string)
   default     = ["ALERT", "FLOW"]
 
@@ -138,13 +138,13 @@ variable "log_types" {
 }
 
 variable "deletion_protection" {
-  description = "Enable deletion protection for the firewall"
+  description = "Enable deletion protection for the firewall."
   type        = bool
   default     = false
 }
 
 variable "encryption_type" {
-  description = "Encryption configuration type (AWS_OWNED_KMS_KEY or CUSTOMER_KMS)"
+  description = "Encryption configuration type (AWS_OWNED_KMS_KEY or CUSTOMER_KMS)."
   type        = string
   default     = "AWS_OWNED_KMS_KEY"
 
@@ -155,13 +155,13 @@ variable "encryption_type" {
 }
 
 variable "kms_key_arn" {
-  description = "ARN of the KMS key for encryption. Required when encryption_type is CUSTOMER_KMS"
+  description = "ARN of the KMS key for encryption; required when encryption_type is CUSTOMER_KMS."
   type        = string
   default     = null
 }
 
 variable "tags" {
-  description = "Map of tags to apply to all resources"
+  description = "Map of tags to apply to all resources."
   type        = map(string)
   default     = {}
 }

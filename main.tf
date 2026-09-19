@@ -203,7 +203,7 @@ resource "aws_networkfirewall_rule_group" "suricata" {
     }
 
     stateful_rule_options {
-      capacity = [for rg in var.stateful_rule_groups : rg if rg.type == "SURICATA"][count.index].capacity
+      rule_order = "STRICT_ORDER"
     }
   }
 
@@ -239,6 +239,10 @@ resource "aws_networkfirewall_rule_group" "domain" {
         targets              = [for rg in var.stateful_rule_groups : rg if rg.type == "DOMAIN_LIST"][count.index].domain_list
       }
     }
+
+    stateful_rule_options {
+      rule_order = "STRICT_ORDER"
+    }
   }
 
   dynamic "encryption_configuration" {
@@ -268,6 +272,10 @@ resource "aws_networkfirewall_rule_group" "five_tuple" {
   rule_group {
     rules_source {
       rules_string = [for rg in var.stateful_rule_groups : rg if rg.type == "5TUPLE"][count.index].rules_string
+    }
+
+    stateful_rule_options {
+      rule_order = "STRICT_ORDER"
     }
   }
 

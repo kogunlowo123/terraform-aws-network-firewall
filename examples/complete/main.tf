@@ -17,7 +17,7 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  azs                = slice(data.aws_availability_zones.available.names, 0, 2)
+  azs                 = slice(data.aws_availability_zones.available.names, 0, 2)
   inspection_vpc_cidr = "10.0.0.0/16"
   spoke_a_vpc_cidr    = "10.1.0.0/16"
   spoke_b_vpc_cidr    = "10.2.0.0/16"
@@ -430,9 +430,9 @@ module "network_firewall" {
   stateful_rule_groups = [
     # Suricata IDS/IPS rules for deep packet inspection
     {
-      name     = "enterprise-threat-detection"
-      capacity = 500
-      type     = "SURICATA"
+      name         = "enterprise-threat-detection"
+      capacity     = 500
+      type         = "SURICATA"
       rules_string = <<-EOT
         # Block SSH brute force
         drop ssh any any -> $HOME_NET 22 (msg:"SSH brute force attempt"; flow:to_server; threshold:type both, track by_src, count 5, seconds 60; sid:2000001; rev:1;)

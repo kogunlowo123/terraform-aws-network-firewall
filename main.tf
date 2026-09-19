@@ -401,7 +401,7 @@ resource "aws_networkfirewall_logging_configuration" "this" {
         log_destination = var.log_destination_type == "s3" ? {
           bucketName = aws_s3_bucket.firewall_logs[0].id
           prefix     = "network-firewall/${lower(log_destination_config.value.log_type)}"
-        } : {
+          } : {
           logGroup = aws_cloudwatch_log_group.firewall[log_destination_config.key].name
         }
       }

@@ -44,10 +44,10 @@ variable "stateless_rule_groups" {
       priority = number
       actions  = list(string)
       match_attributes = object({
-        protocols   = optional(list(number), [])
-        source      = optional(list(string), [])
-        source_port = optional(list(string), [])
-        destination = optional(list(string), [])
+        protocols        = optional(list(number), [])
+        source           = optional(list(string), [])
+        source_port      = optional(list(string), [])
+        destination      = optional(list(string), [])
         destination_port = optional(list(string), [])
         tcp_flags = optional(list(object({
           flags = list(string)

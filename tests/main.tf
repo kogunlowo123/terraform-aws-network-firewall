@@ -17,10 +17,10 @@ module "test" {
 
   stateful_rule_groups = [
     {
-      name         = "block-domains"
-      capacity     = 100
-      type         = "DOMAIN_LIST"
-      domain_list  = [".example.com", ".malware.test"]
+      name        = "block-domains"
+      capacity    = 100
+      type        = "DOMAIN_LIST"
+      domain_list = [".example.com", ".malware.test"]
     }
   ]
 

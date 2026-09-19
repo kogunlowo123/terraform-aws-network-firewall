@@ -102,9 +102,9 @@ module "network_firewall" {
   stateful_rule_groups = [
     # Suricata IDS/IPS rules
     {
-      name     = "suricata-threat-detection"
-      capacity = 200
-      type     = "SURICATA"
+      name         = "suricata-threat-detection"
+      capacity     = 200
+      type         = "SURICATA"
       rules_string = <<-EOT
         # Block SSH brute force attempts
         drop ssh any any -> $HOME_NET 22 (msg:"Potential SSH brute force"; flow:to_server; threshold:type both, track by_src, count 5, seconds 60; sid:1000001; rev:1;)
@@ -122,7 +122,7 @@ module "network_firewall" {
         drop tls any any -> any any (msg:"Blocked cryptocurrency mining pool"; tls.sni; content:"pool."; nocase; sid:1000005; rev:1;)
       EOT
       rule_variables = {
-        HOME_NET    = ["10.0.0.0/16"]
+        HOME_NET     = ["10.0.0.0/16"]
         EXTERNAL_NET = ["0.0.0.0/0"]
       }
     },
@@ -149,8 +149,8 @@ module "network_firewall" {
   deletion_protection = false
 
   tags = {
-    Environment = "staging"
-    Example     = "advanced"
+    Environment  = "staging"
+    Example      = "advanced"
     SecurityTier = "high"
   }
 }

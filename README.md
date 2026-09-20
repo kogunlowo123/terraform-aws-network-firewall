@@ -265,3 +265,39 @@ AWS Network Firewall pricing (us-east-1, subject to change):
 ## License
 
 MIT Licensed. See [LICENSE](LICENSE) for full details.
+
+<!-- project-structure -->
+## Project structure
+
+```text
+├── .github/
+├── docs/
+│   └── architecture.html
+├── examples/
+│   ├── advanced/
+│   ├── basic/
+│   └── complete/
+├── tests/
+│   ├── main.tf
+│   ├── outputs.tf
+│   └── providers.tf
+├── .editorconfig
+├── .gitattributes
+├── .gitignore
+├── CHANGELOG.md
+├── CODEOWNERS
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── SECURITY.md
+├── data.tf
+├── main.tf
+├── outputs.tf
+├── variables.tf
+└── versions.tf
+```
+
+<!-- architecture -->
+## Architecture
+
+![Architecture diagram](docs/architecture.svg)
